@@ -3,6 +3,8 @@
     <TargetFramework>net472</TargetFramework> 
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
