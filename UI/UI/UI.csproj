@@ -14,4 +14,8 @@
     <PackageReference Include="Microsoft.WinUI" Version="3.0.0-preview3.201113.0" />
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Lib\Lib.fsproj" />
+  </ItemGroup>
 </Project>
