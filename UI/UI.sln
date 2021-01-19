@@ -7,7 +7,7 @@ Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "UI (Package)", "UI (Package
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UI", "UI\UI.csproj", "{A6348198-54C0-44D7-BAE2-A7DC6A6A5A5A}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Lib", "Lib\Lib.fsproj", "{DF0AA2DD-3A8F-4049-AF9C-5BAA1887DB4B}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Lib", "Lib\Lib.fsproj", "{DF0AA2DD-3A8F-4049-AF9C-5BAA1887DB4B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
