@@ -38,5 +38,5 @@ type Application() =
 
     member _.Deinitialize () = ()
 
-    member _.OnLaunched (_ : Microsoft.UI.Xaml.LaunchActivatedEventArgs) =
+    member _.OnLaunched _ =
         (new Window()).Activate()
