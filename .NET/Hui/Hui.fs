@@ -17,3 +17,11 @@ type Window() as self =
     do
         self.Content <- panel
         panel.Children.Add(button)
+
+type Application() =
+    member _.Initialize () = ()
+
+    member _.Deinitialize () = ()
+
+    member _.OnLaunched (_ : Microsoft.UI.Xaml.LaunchActivatedEventArgs) =
+        (new Window()).Activate()

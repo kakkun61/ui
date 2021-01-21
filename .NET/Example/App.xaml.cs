@@ -26,6 +26,8 @@ namespace UI
     /// </summary>
     public partial class App : Application
     {
+        Hui.Application app = new Hui.Application();
+
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -34,6 +36,7 @@ namespace UI
         {
             this.InitializeComponent();
             this.Suspending += OnSuspending;
+            app.Initialize();
         }
 
         /// <summary>
@@ -43,8 +46,7 @@ namespace UI
         /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
-            m_window = new Hui.Window();
-            m_window.Activate();
+            this.app.OnLaunched(args);
         }
 
         /// <summary>
@@ -58,7 +60,5 @@ namespace UI
         {
             // Save application state and stop any background activity
         }
-
-        private Window m_window;
     }
 }
