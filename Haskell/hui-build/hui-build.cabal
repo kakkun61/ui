@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
-name: hui
+name: hui-build
 version: 0.1.0.0
 -- synopsis:
 -- description:
@@ -10,7 +10,7 @@ version: 0.1.0.0
 author: Kazuki Okamoto
 maintainer: kazuki.okamoto@kakkun61.com
 -- copyright:
--- category:
+category: Development
 build-type: Simple
 -- extra-source-files:
 
@@ -31,6 +31,17 @@ common common
 
 library
   import: common
-  exposed-modules: Hui
   hs-source-dirs: src
-  ghc-options: -c
+  exposed-modules: Hui.Build
+  build-depends: cabal-plan,
+                 containers,
+                 directory,
+                 either-result,
+                 filepath,
+                 text
+
+executable hui
+  import: common
+  hs-source-dirs: app
+  main-is: hui.hs
+  build-depends: hui-build

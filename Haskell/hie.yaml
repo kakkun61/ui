@@ -1,0 +1,16 @@
+cradle:
+  cabal:
+    - path: "example/./"
+      component: "lib:example"
+
+    - path: "example/./Setup.hs"
+      component: "example:exe:setup"
+
+    - path: "hui/src"
+      component: "lib:hui"
+
+    - path: "hui-build/src"
+      component: "lib:hui-build"
+
+    - path: "hui-build/app/app.hs"
+      component: "hui-build:exe:hui"

@@ -1,4 +1,4 @@
 EXPORTS
   HuiStart
   HuiEnd
-  Add = add
+  HuiMain = main

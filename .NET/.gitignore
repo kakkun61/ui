@@ -1,4 +1,7 @@
-Hui/HuiLib.dll
+Example/*.dll
+Example/*.dll.a
+
+*.g.cs
 
 
 ## Ignore Visual Studio temporary files, build results, and

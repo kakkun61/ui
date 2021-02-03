@@ -1,53 +1,39 @@
 PWSH = pwsh
 
-# FIXME temporaly path
-dist = dist-newstyle/build/x86_64-windows/ghc-8.10.3
-
-dll = Hui
-
-packages = hui-0.1.0.0
-
 .PHONY: build
-build: output/$(dll).dll output/$(dll).dll.a
+build: build-deps
+	cabal v2-build hui
 
-output/$(dll).dll output/$(dll).dll.a&: build-c build-hs output
-	ghc -shared -o output/$(dll).dll $(foreach package, $(packages), $(wildcard $(dist)/$(package)/build/*.o)) $(dll).def
+.PHONY: build-deps
+build-deps:
+	cabal v2-build --only-dependencies hui
 
-output:
-	$(PWSH) -Command "& { New-Item -ItemType Directory output }"
+.PHONY: build-build
+build-build:
+	cabal v2-build hui-build
 
-.PHONY: build-c
-build-c: $(dist)/hui-0.1.0.0/build/rts.o
+.PHONY: build-example
+build-example:
+	cabal v2-build example:flib:HuiLib
 
-$(dist)/hui-0.1.0.0/build/rts.o:
-	$(PWSH) -Command "& { Set-Location src; ghc -c rts.c -outputdir ../$(dist)/hui-0.1.0.0/build }"
-
-.PHONY: build-hs
-build-hs: build-hs-deps
-	cabal v2-build $(CABAL_OPTIONS)
-
-.PHONY: build-hs-deps
-build-hs-deps:
-	cabal v2-build --only-dependencies $(CABAL_OPTIONS)
+.PHONY: deploy-example
+deploy-example: build-example build-build
+	cabal exec hui -- example ../.NET/Example/HuiLib.dll
 
 .PHONY: test
-test: doctest spec
+test: spec-example
 
-.PHONY: doctest
-doctest: build-hs-deps
-	cabal v2-test doctest $(CABAL_OPTIONS)
-
-.PHONY: spec
-spec: build-hs-deps
-	cabal v2-test spec $(CABAL_OPTIONS)
+.PHONY: spec-example
+spec-example:
+	cabal v2-test example:test:spec
 
 .PHONY: repl
 repl:
-	cabal v2-repl $(CABAL_OPTIONS)
+	cabal v2-repl
 
 .PHONY: format
 format:
-	$(PWSH) -Command "& { Get-ChildItem -Filter '*.hs' -Recurse src, app, test | ForEach-Object { stylish-haskell -i $$_.FullName } }"
+	$(PWSH) -Command "& { Get-ChildItem -Filter '*.hs' -Recurse hui\src, hui-build\app, hui-build\src, example\src, example\test | ForEach-Object { stylish-haskell -i $$_.FullName } }"
 
 .PHONY: lint
 lint:
@@ -60,7 +46,7 @@ doc:
 .PHONY: clean
 clean:
 	cabal v2-clean
-	- $(PWSH) -Command "& { Remove-Item -Recurse -Force output }"
+	- $(PWSH) -Command "& { Remove-Item -Recurse -Force example\gen }"
 
 .PHONY: targets
 targets:

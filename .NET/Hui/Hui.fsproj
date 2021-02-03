@@ -3,20 +3,14 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0-windows10.0.18362.0</TargetFramework>
-
     <Platforms>x64</Platforms>
+    <OtherFlags>--warnon:3390</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VCRTForwarders.140" Version="1.0.7" />
     <PackageReference Include="Microsoft.WinUI" Version="3.0.0-preview3.201113.0" />
     <PackageReference Update="FSharp.Core" Version="5.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="HuiLib.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <Compile Include="Hui.fs" />
   </ItemGroup>
 

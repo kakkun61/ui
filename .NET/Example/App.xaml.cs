@@ -1,64 +1,77 @@
-﻿using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
+﻿using Example.Protobuf;
+
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+using System.Runtime.InteropServices;
+using Microsoft.UI.Xaml;
 using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using Google.Protobuf;
+using System.Linq;
 
-namespace UI
+namespace Example
 {
-    /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
-    /// </summary>
-    public partial class App : Application
+    unsafe public partial class App : Application
     {
-        Hui.Application app = new Hui.Application();
+        readonly Hui.Application<Flags> app = new(new Hui.Program(Logic.Program), flags => flags.ToByteArray(), View.Decode);
 
-        /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
         public App()
         {
-            this.InitializeComponent();
-            this.Suspending += OnSuspending;
-            app.Initialize();
+            InitializeComponent();
+            Suspending += OnSuspending;
+            Logic.Start();
         }
 
-        /// <summary>
-        /// Invoked when the application is launched normally by the end user.  Other entry points
-        /// will be used such as when the application is launched to open a specific file.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+        protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
-            this.app.OnLaunched(args);
+            app.Initialize(new Flags());
         }
 
-        /// <summary>
-        /// Invoked when application execution is being suspended.  Application state is saved
-        /// without knowing whether the application will be terminated or resumed with the contents
-        /// of memory still intact.
-        /// </summary>
-        /// <param name="sender">The source of the suspend request.</param>
-        /// <param name="e">Details about the suspend request.</param>
-        private void OnSuspending(object sender, SuspendingEventArgs e)
+        void OnSuspending(object sender, SuspendingEventArgs e)
         {
             // Save application state and stop any background activity
         }
+    }
+
+    static class View
+    {
+        public static Hui.View Decode(byte[] bytes)
+        {
+            var pb = Component.Parser.ParseFrom(bytes);
+            return Convert(pb);
+        }
+
+        static Hui.View Convert(Component component)
+        {
+            switch (component.ComponentCase)
+            {
+                case Component.ComponentOneofCase.View:
+                    return Convert(component.View);
+                case Component.ComponentOneofCase.Button:
+                    return Convert(component.Button);
+            }
+            throw new Exception("can't reach here");
+        }
+
+        static Hui.View Convert(Component.Types.View view)
+        {
+            return Hui.View.NewView(view.Children.Select(Convert));
+        }
+
+        static Hui.View Convert(Component.Types.Button button)
+        {
+            return Hui.View.NewButton(button.Content);
+        }
+    }
+
+    static class Logic
+    {
+        [DllImport("HuiLib.dll", EntryPoint = "HuiStart")]
+        public static extern void Start();
+
+        [DllImport("HuiLib.dll", EntryPoint = "HuiEnd")]
+        public static extern void End();
+
+        [DllImport("HuiLib.dll", EntryPoint = "HuiMain")]
+        public static extern unsafe void Program(Hui.InTag inTag, byte* flags, int flagsSize, void* model, byte* view, int viewSize, int* writtenViewSizePtr, Hui.Give give);
     }
 }
