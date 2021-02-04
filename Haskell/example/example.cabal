@@ -34,6 +34,7 @@ common common
                -Wredundant-constraints
                -Wpartial-fields
                -Wno-name-shadowing
+  default-extensions: Strict
 
 common lib
   import: common
@@ -46,38 +47,50 @@ common lib
                  protocol-buffers,
                  protocol-buffers-descriptor,
                  text
-  autogen-modules: Example.ProtocolBuffers.View
-                   Example.ProtocolBuffers.View.Component
-                   Example.ProtocolBuffers.View.Component.Component
-                   Example.ProtocolBuffers.View.Component.Button
-                   Example.ProtocolBuffers.View.Component.View
+  autogen-modules: Example.Protobuf
+                   Example.Protobuf.Component
+                   Example.Protobuf.Component.Component
+                   Example.Protobuf.Component.Button
+                   Example.Protobuf.Component.View
+                   Example.Protobuf.Flags
+                   Example.Protobuf.Message
+                   Example.Protobuf.Message.ButtonClicked
+                   Example.Protobuf.Message.Message
   build-tool-depends: hprotoc:hprotoc
 
 library
   import: lib
   exposed-modules: Example
-                   Example.ProtocolBuffers.Flags
-                   Example.ProtocolBuffers.Flags.Flags
-                   Example.ProtocolBuffers.View
-                   Example.ProtocolBuffers.View.Component
-                   Example.ProtocolBuffers.View.Component.Component
-                   Example.ProtocolBuffers.View.Component.Button
-                   Example.ProtocolBuffers.View.Component.View
+                   Example.Data
                    Example.Flags
+                   Example.Message
                    Example.View
+                   Example.Protobuf
+                   Example.Protobuf.Component
+                   Example.Protobuf.Component.Component
+                   Example.Protobuf.Component.Button
+                   Example.Protobuf.Component.View
+                   Example.Protobuf.Flags
+                   Example.Protobuf.Message
+                   Example.Protobuf.Message.ButtonClicked
+                   Example.Protobuf.Message.Message
 
 foreign-library HuiLib
   import: lib
   other-modules: Example
-                 Example.ProtocolBuffers.Flags
-                 Example.ProtocolBuffers.Flags.Flags
-                 Example.ProtocolBuffers.View
-                 Example.ProtocolBuffers.View.Component
-                 Example.ProtocolBuffers.View.Component.Component
-                 Example.ProtocolBuffers.View.Component.Button
-                 Example.ProtocolBuffers.View.Component.View
+                 Example.Data
                  Example.Flags
+                 Example.Message
                  Example.View
+                 Example.Protobuf
+                 Example.Protobuf.Component
+                 Example.Protobuf.Component.Component
+                 Example.Protobuf.Component.Button
+                 Example.Protobuf.Component.View
+                 Example.Protobuf.Flags
+                 Example.Protobuf.Message
+                 Example.Protobuf.Message.ButtonClicked
+                 Example.Protobuf.Message.Message
   type: native-shared
   cpp-options: -DFOREIGN
   if os(Windows)

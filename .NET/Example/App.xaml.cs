@@ -1,18 +1,22 @@
-﻿using Example.Protobuf;
+﻿using PB = Example.Protobuf;
 
 using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Microsoft.UI.Xaml;
 using Windows.ApplicationModel;
 
 using Google.Protobuf;
-using System.Linq;
+using Optional;
+using Optional.Linq;
 
 namespace Example
 {
     unsafe public partial class App : Application
     {
-        readonly Hui.Application<Flags> app = new(new Hui.Program(Logic.Program), flags => flags.ToByteArray(), View.Decode);
+        readonly Hui.Application<PB.Flags, Message> app =
+            new(new Hui.Program(Logic.Program), flags => flags.ToByteArray(), Message.Encode, View.Decode);
 
         public App()
         {
@@ -23,7 +27,7 @@ namespace Example
 
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
-            app.Initialize(new Flags());
+            app.Initialize(new PB.Flags());
         }
 
         void OnSuspending(object sender, SuspendingEventArgs e)
@@ -34,32 +38,68 @@ namespace Example
 
     static class View
     {
-        public static Hui.View Decode(byte[] bytes)
+        [return: NotNull]
+        public static Hui.View<Message> Decode([DisallowNull] byte[] bytes)
         {
-            var pb = Component.Parser.ParseFrom(bytes);
+            var pb = PB.Component.Parser.ParseFrom(bytes);
             return Convert(pb);
         }
 
-        static Hui.View Convert(Component component)
+        [return: NotNull]
+        static Hui.View<Message> Convert([DisallowNull] PB.Component component)
         {
-            switch (component.ComponentCase)
+            return component.ComponentCase switch
             {
-                case Component.ComponentOneofCase.View:
-                    return Convert(component.View);
-                case Component.ComponentOneofCase.Button:
-                    return Convert(component.Button);
-            }
-            throw new Exception("can't reach here");
+                PB.Component.ComponentOneofCase.View => ConvertIn(component.View),
+                PB.Component.ComponentOneofCase.Button => ConvertIn(component.Button),
+                _ => throw new InvalidOperationException("it can't reach here"),
+            };
         }
 
-        static Hui.View Convert(Component.Types.View view)
+        [return: NotNull]
+        static Hui.View<Message> ConvertIn([DisallowNull] PB.Component.Types.View view)
         {
-            return Hui.View.NewView(view.Children.Select(Convert));
+            return Hui.View<Message>.NewView(view.Children.Select(Convert));
         }
 
-        static Hui.View Convert(Component.Types.Button button)
+        [return: NotNull]
+        static Hui.View<Message> ConvertIn([DisallowNull] PB.Component.Types.Button button)
         {
-            return Hui.View.NewButton(button.Content);
+            return Hui.View<Message>.NewButton(button.Content, button.OnClick.SomeNotNull().Select(Message.ConvertIn));
+        }
+    }
+
+    class Message
+    {
+        public sealed class ButtonClicked : Message {}
+
+        [return: NotNull]
+        public static byte[] Encode([DisallowNull] Message message)
+        {
+            return ConvertOut(message).ToByteArray();
+        }
+
+        [return: NotNull]
+        public static Message ConvertIn([DisallowNull] PB.Message message)
+        {
+            return message.MessageCase switch
+            {
+                PB.Message.MessageOneofCase.ButtonClicked => new ButtonClicked(),
+                _ => throw new InvalidOperationException("it can't reach here"),
+            };
+        }
+
+        [return: NotNull]
+        static PB.Message ConvertOut([DisallowNull] Message message)
+        {
+            return message switch
+            {
+                ButtonClicked _ => new PB.Message
+                {
+                    ButtonClicked = new PB.Message.Types.ButtonClicked()
+                },
+                _ => throw new InvalidOperationException("it can't reach here"),
+            };
         }
     }
 
@@ -72,6 +112,6 @@ namespace Example
         public static extern void End();
 
         [DllImport("HuiLib.dll", EntryPoint = "HuiMain")]
-        public static extern unsafe void Program(Hui.InTag inTag, byte* flags, int flagsSize, void* model, byte* view, int viewSize, int* writtenViewSizePtr, Hui.Give give);
+        public static extern unsafe void Program(Hui.InTag inTag, byte* flags, int flagsSize, void* model, byte* view, int viewSize, int* writtenViewSizePtr, byte* messagePtr, int messageSize, Hui.Give give);
     }
 }

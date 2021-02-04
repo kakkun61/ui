@@ -1,6 +1,0 @@
-syntax = "proto2";
-
-option csharp_namespace = "Example.Protobuf";
-
-message Flags {
-}

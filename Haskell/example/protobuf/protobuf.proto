@@ -2,6 +2,17 @@ syntax = "proto2";
 
 option csharp_namespace = "Example.Protobuf";
 
+message Flags {
+}
+
+message Message {
+  message ButtonClicked {}
+
+  oneof message {
+    ButtonClicked buttonClicked = 1;
+  }
+}
+
 message Component {
   message View {
     repeated Component children = 1;
@@ -9,6 +20,7 @@ message Component {
 
   message Button {
     required string content = 1;
+    optional Message onClick = 2;
   }
 
   oneof component {

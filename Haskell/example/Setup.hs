@@ -1,8 +1,8 @@
 import Distribution.Simple                (Args, UserHooks (preBuild), defaultMainWithHooks, simpleUserHooks)
 import Distribution.Simple.Setup          (BuildFlags)
 import Distribution.Types.HookedBuildInfo (HookedBuildInfo, emptyHookedBuildInfo)
+import System.Directory                   (listDirectory)
 import System.Process                     (callProcess)
-import System.Directory (listDirectory)
 
 main :: IO ()
 main =
@@ -19,7 +19,7 @@ hprotoc _ _ = do
     $ mconcat
         [ [ "--proto_path", protobufDir
           , "--haskell_out", "gen"
-          , "--prefix", "Example.ProtocolBuffers"
+          , "--prefix", "Example"
           ]
         , protos
         ]

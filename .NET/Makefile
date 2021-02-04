@@ -2,7 +2,7 @@ PWSH = pwsh
 
 .PHONY: compile-proto
 compile-proto:
-	protoc --proto_path Example\protobuf --csharp_out Example --csharp_opt=file_extension=.g.cs flags.proto view.proto
+	protoc --proto_path Example\protobuf --csharp_out Example --csharp_opt=file_extension=.g.cs protobuf.proto
 
 .PHONY: targets
 targets:

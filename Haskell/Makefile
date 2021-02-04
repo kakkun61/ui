@@ -34,6 +34,7 @@ repl:
 .PHONY: format
 format:
 	$(PWSH) -Command "& { Get-ChildItem -Filter '*.hs' -Recurse hui\src, hui-build\app, hui-build\src, example\src, example\test | ForEach-Object { stylish-haskell -i $$_.FullName } }"
+	stylish-haskell -i example/Setup.hs
 
 .PHONY: lint
 lint:
@@ -41,7 +42,7 @@ lint:
 
 .PHONY: doc
 doc:
-	cabal v2-haddock
+	cabal v2-haddock all
 
 .PHONY: clean
 clean:

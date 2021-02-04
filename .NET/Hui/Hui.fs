@@ -2,13 +2,17 @@
 
 namespace Hui
 
+open System
 open System.Collections.Generic
-open Microsoft.UI.Xaml
-open Microsoft.UI.Xaml.Controls
 open FSharp.NativeInterop
+open Microsoft.UI.Xaml
+
+type UIStackPanel = Microsoft.UI.Xaml.Controls.StackPanel
+type UIButton = Microsoft.UI.Xaml.Controls.Button
 
 type InTag =
     | Init = 0
+    | Cmd = 1
 
 type OutTag =
     | Noop = 0
@@ -22,55 +26,127 @@ type Give = delegate of OutTag -> unit
 /// <param name="view">a pointer to a view memory area</param>
 /// <param name="viewSize">a size of a view memory area</param>
 /// <param name="writtenViewSizePtr">a pointer to a size of a written view memory area</param>
+/// <param name="messagePtr">a pointer to a message memory area</param>
+/// <param name="messageSize">a size of a message memory area</param>
 /// <param name="give">a pointer to a continuation</param>
-type Program = delegate of inTag : InTag * flags : byte nativeptr * flagsSize : int * model : voidptr * view : byte nativeptr * viewSize : int * writtenViewSizePtr : int nativeptr * give : Give -> unit
+type Program =
+  delegate of
+    inTag : InTag
+    * flags : byte nativeptr
+    * flagsSize : int
+    * model : voidptr
+    * view : byte nativeptr
+    * viewSize : int
+    * writtenViewSizePtr : int nativeptr
+    * messagePtr : byte nativeptr
+    * messageSize : int
+    * give : Give
+    -> unit
 
-type View =
-    | View of children : View IEnumerable
-    | Button of content : string
+type ('flags, 'message) Argument =
+  | InitArgument of flasg : 'flags
+  | CommandArgument of message : 'message
+
+type 'message View =
+    | View of children : ('message View) IEnumerable
+    | Button of content : string * onClick : 'message Optional.Option
 
 type 'a Encode = delegate of 'a -> byte array
 
 type 'a Decode = delegate of byte array -> 'a
 
-exception Unimplemented of string
-
 module View =
-    let rec instanciate (prev : View option) now : UIElement =
+    let rec instanciate onEvent prev now : UIElement =
         match prev with
         | None ->
             match now with
             | View children ->
-                let panel = new StackPanel ()
+                let panel = UIStackPanel ()
                 for child in children do
-                    panel.Children.Add (instanciate None child)
+                    panel.Children.Add (instanciate onEvent None child)
                 upcast panel
-            | Button content ->
-                upcast new Button (Content = content)
-        | Some prev -> raise (Unimplemented "")
+            | Button (content, onClick)->
+                upcast onClick.Match(
+                    (fun onClick ->
+                        let button = UIButton (Content = content)
+                        button.Click.Add (onEvent onClick)
+                        button),
+                    (fun () -> UIButton (Content = content)))
+        | Some prev -> raise (NotImplementedException ())
 
-type 'flags Application (program : Program, encodeFlags : 'flags Encode, decodeView : View Decode) =
+type
+    ('flags, 'message)
+    Application
+    (program : Program,
+     encodeFlags : 'flags Encode,
+     encodeMessage : 'message Encode,
+     decodeView : ('message View) Decode) =
+
     let viewSize = 512
+
+    let viewBytes = Array.zeroCreate viewSize
 
     /// <remarks>This is an array to use <c>fixed</c> operator.</remarks>
     let modelPtr : nativeint array = Array.zeroCreate 1
 
-    let viewBytes = Array.zeroCreate viewSize
+    let nullptr = NativePtr.ofNativeInt IntPtr.Zero
+
+    let mutable window = Unchecked.defaultof<Window>
 
     member this.Initialize (flags : 'flags) =
-        let (view, outTag) = this.Program InTag.Init flags
-        (new Window (Content = View.instanciate None view)).Activate ()
+        let (view, outTag) = this.Program (InitArgument flags)
+        window <- Window (Content = View.instanciate this.OnEvent None view)
+        window.Activate ()
 
-    member _.Program inTag flags =
-        let flagsBytes = encodeFlags.Invoke flags
-        use flagsPtr = fixed flagsBytes
-        use modelPtrPtr = fixed modelPtr
-        use viewPtr = fixed viewBytes
-        let writtenViewSizes = Array.zeroCreate 1
-        use writtenViewSizePtr = fixed writtenViewSizes
-        let mutable outTag = OutTag.Noop
-        let give = Give (fun t -> outTag <- t)
-        program.Invoke (inTag, flagsPtr, flagsBytes.Length, NativePtr.toVoidPtr modelPtrPtr, viewPtr, viewSize, writtenViewSizePtr, give)
-        let writtenViewSize = writtenViewSizes.[0]
-        let view = decodeView.Invoke viewBytes.[0..writtenViewSize-1]
-        (view, outTag)
+    member this.OnEvent message _ = 
+        let (view, outTag) = this.Program (CommandArgument message)
+        window.Content <- View.instanciate this.OnEvent None view
+
+    member _.Program arg =
+        match arg with
+        | InitArgument flags ->
+            let flagsBytes = encodeFlags.Invoke flags
+            use flagsPtr = fixed flagsBytes
+            use modelPtrPtr = fixed modelPtr
+            use viewPtr = fixed viewBytes
+            let writtenViewSizes = Array.zeroCreate 1
+            use writtenViewSizePtr = fixed writtenViewSizes
+            let mutable outTag = OutTag.Noop
+            let give = Give (fun t -> outTag <- t)
+            program.Invoke
+              (InTag.Init,
+               flagsPtr,
+               flagsBytes.Length,
+               NativePtr.toVoidPtr modelPtrPtr,
+               viewPtr,
+               viewSize,
+               writtenViewSizePtr,
+               nullptr,
+               0,
+               give)
+            let writtenViewSize = writtenViewSizes.[0]
+            let view = decodeView.Invoke viewBytes.[0..writtenViewSize-1]
+            (view, outTag)
+        | CommandArgument message ->
+            use modelPtrPtr = fixed modelPtr
+            let messageBytes = encodeMessage.Invoke message
+            use messagePtr = fixed messageBytes
+            use viewPtr = fixed viewBytes
+            let writtenViewSizes = Array.zeroCreate 1
+            use writtenViewSizePtr = fixed writtenViewSizes
+            let mutable outTag = OutTag.Noop
+            let give = Give (fun t -> outTag <- t)
+            program.Invoke
+              (InTag.Cmd,
+               nullptr,
+               0,
+               NativePtr.toVoidPtr modelPtrPtr,
+               viewPtr,
+               viewSize,
+               writtenViewSizePtr,
+               messagePtr,
+               messageBytes.Length,
+               give)
+            let writtenViewSize = writtenViewSizes.[0]
+            let view = decodeView.Invoke viewBytes.[0..writtenViewSize-1]
+            (view, outTag)

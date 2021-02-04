@@ -28,6 +28,7 @@ common common
                -Wredundant-constraints
                -Wpartial-fields
                -Wno-name-shadowing
+  default-extensions: Strict
 
 library
   import: common

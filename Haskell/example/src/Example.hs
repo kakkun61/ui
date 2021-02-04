@@ -1,27 +1,25 @@
-{-# LANGUAGE CPP            #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE CPP               #-}
+{-# LANGUAGE NamedFieldPuns    #-}
+{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Example
   ( main
+  , Flags (..)
+  , Model (..)
+  , Message (..)
   ) where
 
-import Example.Flags (Flags)
+import Example.Data
+import Example.Flags (Flags (Flags))
 import Example.View  ()
 
-import           Hui (Command, Program, View (Button, View), noopOutTag, program)
+import           Hui (Command, Program, Subscription, View (Button, View, children), noopOutTag, program)
 import qualified Hui
 
 import qualified Data.Sequence   as Seq
+import qualified Data.Text       as Text
 import           Foreign.C.Types (CInt (CInt))
-
-data Model = Model
-
-data Message = Message
-
-instance Hui.Message Message where
-  messageTag _ = noopOutTag
 
 main :: Program Flags Model Message
 main = program initialize view update subscriptions
@@ -31,11 +29,13 @@ foreign export ccall main :: Program Flags Model Message
 #endif
 
 initialize :: Flags -> (Model, Command Message)
-initialize _ = (Model, mempty)
+initialize _ = (Model 0, mempty)
 
 view :: Model -> View Message
-view _ = View [Button "one", Button "two"]
+view Model { count } = View $ flip fmap [0 .. count] $ \c -> Button (Text.pack $ show c) (Just ButtonClicked)
 
-update = undefined
+update :: Message -> Model -> (Model, Command Message)
+update ButtonClicked Model { count } = (Model { count = count + 1 }, mempty)
 
+subscriptions :: Model -> Subscription Message
 subscriptions = undefined

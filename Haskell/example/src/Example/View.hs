@@ -1,24 +1,35 @@
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE NamedFieldPuns    #-}
 
 module Example.View () where
 
-import Hui      (View (Button, View, children, content))
+import           Example.Data
+import qualified Example.Message                      as Message
+import qualified Example.Protobuf.Component           as C
+import qualified Example.Protobuf.Component.Button    as CB
+import qualified Example.Protobuf.Component.Component as CC
+import qualified Example.Protobuf.Component.View      as CV
+
+import Hui      (View (Button, View, children, content, onClick))
 import Hui.Code (Encode (encode))
 
-import qualified Data.Sequence                                    as Seq
-import qualified Example.ProtocolBuffers.View.Component           as PB
-import qualified Example.ProtocolBuffers.View.Component.Button    as PBB
-import qualified Example.ProtocolBuffers.View.Component.Component as PBC
-import qualified Example.ProtocolBuffers.View.Component.View      as PBV
-import qualified Data.Text.Encoding as Text
-import qualified Text.ProtocolBuffers as PB
 import qualified Data.ByteString.Lazy as BSL
+import qualified Data.Sequence        as Seq
+import qualified Data.Text.Encoding   as Text
+import qualified Text.ProtocolBuffers as PB
 
-instance Encode (View message) where
-  encode = encode . convert
+instance Encode (View Message) where
+  encode = encode . convertOut
 
-instance Encode PB.Component
+instance Encode C.Component
 
-convert :: View message -> PB.Component
-convert View { children } = PB.Component $ Just $ PBC.View $ PBV.View { PBV.children = convert <$> children }
-convert Button { content }           = PB.Component $ Just $ PBC.Button PBB.Button { PBB.content = PB.Utf8 $ BSL.fromStrict $ Text.encodeUtf8 content }
+convertOut :: View Message -> C.Component
+convertOut View { children } = C.Component $ Just $ CC.View CV.View { CV.children = convertOut <$> children }
+convertOut Button { content, onClick } =
+  C.Component
+    $ Just
+    $ CC.Button
+        CB.Button
+          { CB.content = PB.Utf8 $ BSL.fromStrict $ Text.encodeUtf8 content
+          , CB.onClick = Message.convertOut <$> onClick
+          }
