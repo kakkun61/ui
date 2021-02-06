@@ -38,7 +38,7 @@ format:
 
 .PHONY: lint
 lint:
-	hlint hui/src hui-build/app hui-build/src example/src example/test example/Setup.hs
+	hlint hui/src hui-build/app hui-build/src example/src example/Setup.hs
 
 .PHONY: doc
 doc:

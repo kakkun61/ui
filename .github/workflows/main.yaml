@@ -1,0 +1,59 @@
+name: main
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  test-haskell:
+    strategy:
+      matrix:
+        ghc: ['8.10']
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: haskell/actions/setup@v1
+        with:
+          ghc-version: ${{ matrix.ghc }}
+      - uses: actions/cache@v2
+        with:
+          path: $HOME/.cabal/packages
+          key: packages-${{ runner.os }}-${{ matrix.ghc }}
+      - uses: actions/cache@v2
+        with:
+          path: $HOME/.cabal/store
+          key: store-${{ runner.os }}-${{ matrix.ghc }}
+      - run: make test
+        working-directory: Haskell
+
+  lint-haskell:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: rwe/actions-hlint-setup@v1
+        with:
+          version: '3.2.7'
+      - run: make lint
+        working-directory: Haskell
+
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: haskell/actions/setup@v1
+        with:
+          ghc-version: ${{ matrix.ghc }}
+      - uses: actions/cache@v2
+        with:
+          path: $HOME/.cabal/packages
+          key: packages-${{ runner.os }}-${{ matrix.ghc }}
+      - uses: actions/cache@v2
+        with:
+          path: $HOME/.cabal/store
+          key: store-${{ runner.os }}-${{ matrix.ghc }}
+      - uses: microsoft/setup-msbuild@v1
+      - run: make
