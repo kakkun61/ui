@@ -37,7 +37,7 @@ spec = do
 
     it "cmd" $ do
       let
-        BS.PS messageFPtr _ messageSize = encode ButtonOneClicked
+        BS.PS messageFPtr _ messageSize = encode ButtonClicked
         viewSize :: Int
         viewSize = 256
       flip runContT pure $ do
