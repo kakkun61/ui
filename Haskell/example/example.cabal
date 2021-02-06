@@ -18,6 +18,7 @@ custom-setup
   setup-depends: base,
                  Cabal,
                  directory,
+                 filepath,
                  process
 
 common common
@@ -120,4 +121,5 @@ executable setup
   main-is: Setup.hs
   build-depends: Cabal,
                  directory,
+                 filepath,
                  process
