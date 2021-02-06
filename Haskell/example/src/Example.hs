@@ -10,7 +10,7 @@ module Example
   , Message (..)
   ) where
 
-import Example.Data
+import Example.Data  (Message (ButtonClicked), Model (Model, count))
 import Example.Flags (Flags (Flags))
 import Example.View  ()
 

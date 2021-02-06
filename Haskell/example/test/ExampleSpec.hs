@@ -15,7 +15,7 @@ import           Control.Monad.Cont
 import qualified Data.ByteString          as BS
 import qualified Data.ByteString.Internal as BS
 import           Foreign
-import           Foreign.C.Types          (CInt (CInt))
+import           Foreign.C.Types
 
 instance Encode Flags
 

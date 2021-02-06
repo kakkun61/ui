@@ -2,7 +2,7 @@ module Example.Message
   ( convertOut
   ) where
 
-import           Example.Data
+import           Example.Data                           (Message (ButtonClicked))
 import qualified Example.Protobuf.Message               as M
 import qualified Example.Protobuf.Message.ButtonClicked as MB
 import qualified Example.Protobuf.Message.Message       as MM

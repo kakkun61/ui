@@ -98,7 +98,7 @@ type
         window <- Window (Content = View.instanciate this.OnEvent None view)
         window.Activate ()
 
-    member this.OnEvent message _ = 
+    member this.OnEvent message _ =
         let (view, outTag) = this.Program (CommandArgument message)
         window.Content <- View.instanciate this.OnEvent None view
 

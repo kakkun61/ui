@@ -3,6 +3,9 @@ cradle:
     - path: "example/./"
       component: "lib:example"
 
+    - path: "example/test"
+      component: "example:test:spec"
+
     - path: "example/./Setup.hs"
       component: "example:exe:setup"
 
@@ -12,5 +15,5 @@ cradle:
     - path: "hui-build/src"
       component: "lib:hui-build"
 
-    - path: "hui-build/app/app.hs"
+    - path: "hui-build/app/hui.hs"
       component: "hui-build:exe:hui"

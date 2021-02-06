@@ -3,7 +3,7 @@
 
 module Example.View () where
 
-import           Example.Data
+import           Example.Data                         (Message)
 import qualified Example.Message                      as Message
 import qualified Example.Protobuf.Component           as C
 import qualified Example.Protobuf.Component.Button    as CB
