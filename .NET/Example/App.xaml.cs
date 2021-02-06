@@ -105,13 +105,13 @@ namespace Example
 
     static class Logic
     {
-        [DllImport("HuiLib.dll", EntryPoint = "HuiStart")]
+        [DllImport("Logic.dll")]
         public static extern void Start();
 
-        [DllImport("HuiLib.dll", EntryPoint = "HuiEnd")]
+        [DllImport("Logic.dll")]
         public static extern void End();
 
-        [DllImport("HuiLib.dll", EntryPoint = "HuiMain")]
+        [DllImport("Logic.dll")]
         public static extern unsafe void Program(Hui.InTag inTag, byte* flags, int flagsSize, void* model, byte* view, int viewSize, int* writtenViewSizePtr, byte* messagePtr, int messageSize, Hui.Give give);
     }
 }

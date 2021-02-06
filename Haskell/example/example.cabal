@@ -76,7 +76,7 @@ library
                    Example.Protobuf.Message.ButtonClicked
                    Example.Protobuf.Message.Message
 
-foreign-library HuiLib
+foreign-library Logic
   import: lib
   other-modules: Example
                  Example.Data
@@ -96,7 +96,7 @@ foreign-library HuiLib
   cpp-options: -DFOREIGN
   if os(Windows)
     options: standalone
-    mod-def-file: HuiLib.def
+    mod-def-file: Logic.def
 
 test-suite spec
   import: common

@@ -1,10 +1,10 @@
 PWSH = pwsh
 
 .PHONY: build
-build: .NET/Hui/HuiLib.dll
+build: .NET/Hui/Logic.dll
 
-.NET/Hui/HuiLib.dll:
-	$(PWSH) -Command "& { Set-Location Haskell; make }"
+.NET/Hui/Logic.dll:
+	$(PWSH) -Command "& { Set-Location Haskell; make deploy-example }"
 
 .PHONY: clean
 clean:

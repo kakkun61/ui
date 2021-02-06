@@ -17,7 +17,7 @@
     <PackageReference Include="Microsoft.WinUI" Version="3.0.0-preview3.201113.0" />
     <ProjectReference Include="..\Hui\Hui.fsproj" />
     <Manifest Include="$(ApplicationManifest)" />
-    <None Include="HuiLib.dll">
+    <None Include="Logic.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

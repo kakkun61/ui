@@ -14,11 +14,11 @@ build-build:
 
 .PHONY: build-example
 build-example:
-	cabal v2-build example:flib:HuiLib
+	cabal v2-build example:flib:Logic
 
 .PHONY: deploy-example
 deploy-example: build-example build-build
-	cabal exec hui -- example ../.NET/Example/HuiLib.dll
+	cabal exec hui -- example ../.NET/Example/Logic.dll
 
 .PHONY: test
 test: spec-example
