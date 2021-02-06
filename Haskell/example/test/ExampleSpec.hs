@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
-
 module ExampleSpec
   ( spec
   ) where
@@ -31,7 +29,7 @@ spec = do
         flagsPtr <- ContT $ withForeignPtr flagsFPtr
         modelPtrPtr <- ContT alloca
         viewPtr <- ContT $ allocaBytes viewSize
-        writtenViewSizePtr <- ContT $ alloca
+        writtenViewSizePtr <- ContT alloca
         givePtr <- liftIO $ cGive give
         liftIO $ main initInTag flagsPtr (fromIntegral flagsSize) modelPtrPtr viewPtr (fromIntegral viewSize) writtenViewSizePtr nullPtr 0 givePtr
 
@@ -45,7 +43,7 @@ spec = do
         modelPtr <- liftIO $ newStablePtr $ Model 0
         liftIO $ poke modelPtrPtr modelPtr
         viewPtr <- ContT $ allocaBytes viewSize
-        writtenViewSizePtr <- ContT $ alloca
+        writtenViewSizePtr <- ContT alloca
         messagePtr <- ContT $ withForeignPtr messageFPtr
         givePtr <- liftIO $ cGive give
         liftIO $ main cmdInTag nullPtr 0 modelPtrPtr viewPtr (fromIntegral viewSize) writtenViewSizePtr messagePtr (fromIntegral messageSize) givePtr

@@ -1,7 +1,4 @@
-{-# LANGUAGE CPP               #-}
-{-# LANGUAGE NamedFieldPuns    #-}
-{-# LANGUAGE OverloadedLists   #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
 
 module Example.Data
   ( Model (..)
@@ -14,7 +11,7 @@ import qualified Hui
 import qualified Data.Sequence   as Seq
 import           Foreign.C.Types (CInt (CInt))
 
-data Model = Model { count :: Word } deriving (Show, Read, Eq, Ord)
+newtype Model = Model { count :: Word } deriving (Show, Read, Eq, Ord)
 
 data Message = ButtonClicked deriving (Show, Read, Eq, Ord)
 

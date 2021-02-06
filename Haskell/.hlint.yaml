@@ -8,7 +8,8 @@
 
 # Specify additional command line arguments
 #
-# - arguments: [--color, --cpp-simple, -XQuasiQuotes]
+- arguments:
+  - -XStrict
 
 
 # Control which extensions/flags/modules/functions can be used
@@ -56,6 +57,7 @@
 # Ignore some builtin hints
 # - ignore: {name: Use let}
 # - ignore: {name: Use const, within: SpecialModule} # Only within certain modules
+- ignore: {name: Redundant irrefutable pattern} # Ignore lazy patterns in strict context actually
 
 
 # Define some custom infix operators
