@@ -3,16 +3,8 @@
 module Hui
  ( Program
  , program
- , Command
- , Message (..)
  , View (..)
  , Subscription
- , Give
- , InTag
- , initInTag
- , cmdInTag
- , OutTag
- , noopOutTag
  ) where
 
 import Hui.Code (Decode (decode), Encode (encode))
@@ -29,14 +21,6 @@ import           Foreign                       (StablePtr, Storable (peek, poke)
 import           Foreign.C.Types               (CInt (CInt))
 import           Foreign.Ptr                   (FunPtr, Ptr)
 
-data Command message = Command deriving (Show, Read, Eq, Ord)
-
-instance Semigroup (Command message) where
-  _ <> _ = Command
-
-instance Monoid (Command message) where
-  mempty = Command
-
 data View message
   = View { children :: Seq (View message) }
   | Button { content :: Text, onClick :: Maybe message }
@@ -49,7 +33,7 @@ instance Semigroup (Subscription message) where
 instance Monoid (Subscription message) where
   mempty = Subscription
 
-type Program flags model message =
+type Program flags model message command =
   Ptr Word8 -- ^ a pinter to a flags memory area (input)
   -> CInt -- ^ a size of a flags memory area in byte
   -> Ptr (StablePtr model) -- ^ a pointer to a pointer to a model (input/output)
@@ -58,40 +42,28 @@ type Program flags model message =
   -> Ptr CInt -- ^ a pointer to a size of a written view memory area (output)
   -> Ptr Word8 -- ^ a pointer to a message memory area (input)
   -> CInt -- ^ a size of a message memory area
-  -> FunPtr Give -- ^ a pointer to a continuation (input)
+  -> Ptr Word8 -- ^ a pointer to a command memory area (output)
+  -> CInt -- ^ a size of a command memory area
+  -> Ptr CInt -- ^ a pointer to a size of a written command memory area (output)
   -> IO ()
 
-type InTag = CInt
-
-initInTag :: InTag
-initInTag = 0
-
-cmdInTag :: InTag
-cmdInTag = 1
-
-type OutTag = CInt
-
-noopOutTag :: OutTag
-noopOutTag = 0
-
-type Give = OutTag -> IO ()
-
 program
-  :: ( Message message
-     , Decode flags
+  :: ( Decode flags
      , Encode (View message)
      , Decode message
+     , Encode command
      )
-  => (flags -> (model, Command message))
+  => (flags -> (model, command))
   -> (model -> View message)
-  -> (message -> model -> (model, Command message))
+  -> (message -> model -> (model, command))
   -> (model -> Subscription message)
-  -> Program flags model message
+  -> Program flags model message command
 -- update
-program ~initialize ~view ~update ~subscriptions _ (-1) modelPtrPtr viewPtr cViewSize writtenViewSizePtr messagePtr cMessageSize give = do
+program ~initialize ~view ~update ~subscriptions _ (-1) modelPtrPtr viewPtr cViewSize writtenViewSizePtr messagePtr cMessageSize commandPtr cCommandSize writtenCommandSizePtr = do
   let
     viewSize = fromIntegral cViewSize :: Int
     messageSize = fromIntegral cMessageSize :: Int
+    commandSize = fromIntegral cCommandSize :: Int
   modelPtr <- peek modelPtrPtr
   model <- deRefStablePtr modelPtr
   freeStablePtr modelPtr
@@ -99,35 +71,33 @@ program ~initialize ~view ~update ~subscriptions _ (-1) modelPtrPtr viewPtr cVie
   message <- decode $ BS.PS messageFPtr 0 messageSize
   let
     (newModel, command) = update message model
-    outTag = messageTag command
   newModelPtr <- newStablePtr newModel
   poke modelPtrPtr newModelPtr
-  hsGive give outTag
   let BS.PS viewFPtr _ writtenViewSize = encode $ view model
   when (viewSize < writtenViewSize) $ fail "an encoded view is too large"
   withForeignPtr viewFPtr $ \srcPtr -> copyBytes viewPtr srcPtr writtenViewSize
   poke writtenViewSizePtr (fromIntegral writtenViewSize)
+  let BS.PS commandFPtr _ writtenCommandSize = encode command
+  when (commandSize < writtenCommandSize) $ fail "an encoded command is too large"
+  withForeignPtr commandFPtr $ \srcPtr -> copyBytes commandPtr srcPtr writtenCommandSize
+  poke writtenCommandSizePtr (fromIntegral writtenCommandSize)
 -- init
-program ~initialize ~view ~update ~subscriptions flagsPtr cFlagsSize modelPtrPtr viewPtr cViewSize writtenViewSizePtr messagePtr cMessageSize give = do
+program ~initialize ~view ~update ~subscriptions flagsPtr cFlagsSize modelPtrPtr viewPtr cViewSize writtenViewSizePtr messagePtr cMessageSize commandPtr cCommandSize writtenCommandSizePtr = do
   let
     flagsSize = fromIntegral cFlagsSize :: Int
     viewSize = fromIntegral cViewSize :: Int
+    commandSize = fromIntegral cCommandSize :: Int
   flagsFPtr <- newForeignPtr_ flagsPtr
   flags <- decode $ BS.PS flagsFPtr 0 flagsSize
   let
     (model, command) = initialize flags
-    outTag = messageTag command
   modelPtr <- newStablePtr model
   poke modelPtrPtr modelPtr
-  hsGive give outTag
   let BS.PS viewFPtr _ writtenViewSize = encode $ view model
   when (viewSize < writtenViewSize) $ fail "an encoded view is too large"
   withForeignPtr viewFPtr $ \srcPtr -> copyBytes viewPtr srcPtr writtenViewSize
   poke writtenViewSizePtr (fromIntegral writtenViewSize)
-
-type CView = CInt
-
-foreign import ccall "dynamic" hsGive :: FunPtr Give -> Give
-
-class Message a where
-  messageTag :: Command a -> OutTag
+  let BS.PS commandFPtr _ writtenCommandSize = encode command
+  when (commandSize < writtenCommandSize) $ fail "an encoded command is too large"
+  withForeignPtr commandFPtr $ \srcPtr -> copyBytes commandPtr srcPtr writtenCommandSize
+  poke writtenCommandSizePtr (fromIntegral writtenCommandSize)

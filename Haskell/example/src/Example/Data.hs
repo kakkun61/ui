@@ -3,9 +3,10 @@
 module Example.Data
   ( Model (..)
   , Message (..)
+  , Command (..)
   ) where
 
-import           Hui (Command, Program, View (Button, View), noopOutTag, program)
+import           Hui (Program, View (Button, View), program)
 import qualified Hui
 
 import qualified Data.Sequence   as Seq
@@ -15,5 +16,10 @@ newtype Model = Model { count :: Word } deriving (Show, Read, Eq, Ord)
 
 data Message = ButtonClicked deriving (Show, Read, Eq, Ord)
 
-instance Hui.Message Message where
-  messageTag _ = noopOutTag
+data Command = NoOp deriving (Show, Read, Eq, Ord)
+
+instance Semigroup Command where
+  _ <> _ = NoOp
+
+instance Monoid Command where
+  mempty = NoOp

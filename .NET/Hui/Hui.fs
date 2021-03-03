@@ -1,4 +1,4 @@
-#nowarn "9" // Possible unverifiable code
+﻿#nowarn "9" // Possible unverifiable code
 
 namespace Hui
 
@@ -10,11 +10,6 @@ open Microsoft.UI.Xaml
 type UIStackPanel = Microsoft.UI.Xaml.Controls.StackPanel
 type UIButton = Microsoft.UI.Xaml.Controls.Button
 
-type OutTag =
-    | Noop = 0
-
-type Give = delegate of OutTag -> unit
-
 /// <param name="flags">a pinter to a flags memory area</param>
 /// <param name="flagsSize">a size of a flags memory area</param>
 /// <param name="model">a pointer to a pointer to a model</param>
@@ -23,7 +18,9 @@ type Give = delegate of OutTag -> unit
 /// <param name="writtenViewSizePtr">a pointer to a size of a written view memory area</param>
 /// <param name="messagePtr">a pointer to a message memory area</param>
 /// <param name="messageSize">a size of a message memory area</param>
-/// <param name="give">a pointer to a continuation</param>
+/// <param name="command">a pointer to a command memory area</param>
+/// <param name="commandSize">a size of a command memory area</param>
+/// <param name="writtenCommandSizePtr">a pointer to a size of a written command memory area</param>
 type Program =
   delegate of
     flags : byte nativeptr
@@ -34,7 +31,9 @@ type Program =
     * writtenViewSizePtr : int nativeptr
     * messagePtr : byte nativeptr
     * messageSize : int
-    * give : Give
+    * command : byte nativeptr
+    * commandSize : int
+    * writtenCommandSizePtr : int nativeptr
     -> unit
 
 type ('flags, 'message) Argument =
@@ -48,6 +47,8 @@ type 'message View =
 type 'a Encode = delegate of 'a -> byte array
 
 type 'a Decode = delegate of byte array -> 'a
+
+type ('command, 'message) OnCommand = delegate of 'command -> 'message Optional.Option
 
 module View =
     let rec instanciate onEvent prev now : UIElement =
@@ -69,16 +70,22 @@ module View =
         | Some prev -> raise (NotImplementedException ())
 
 type
-    ('flags, 'message)
+    ('flags, 'message, 'command)
     Application
     (program : Program,
      encodeFlags : 'flags Encode,
      encodeMessage : 'message Encode,
-     decodeView : ('message View) Decode) =
+     decodeView : ('message View) Decode,
+     decodeCommand : 'command Decode,
+     onCommand : ('command, 'message) OnCommand) =
 
     let viewSize = 512
 
     let viewBytes = Array.zeroCreate viewSize
+
+    let commandSize = 512
+
+    let commandBytes = Array.zeroCreate commandSize
 
     /// <remarks>This is an array to use <c>fixed</c> operator.</remarks>
     let modelPtr : nativeint array = Array.zeroCreate 1
@@ -88,25 +95,31 @@ type
     let mutable window = Unchecked.defaultof<Window>
 
     member this.Initialize (flags : 'flags) =
-        let (view, outTag) = this.Program (InitArgument flags)
+        let (view, command) = this.Program (InitArgument flags)
         window <- Window (Content = View.instanciate this.OnEvent None view)
         window.Activate ()
+        (onCommand.Invoke command).MatchSome (fun message -> this.OnMessage message)
 
-    member this.OnEvent message _ =
-        let (view, outTag) = this.Program (CommandArgument message)
+    member this.OnEvent message _ = this.OnMessage message
+
+    member this.OnMessage message =
+        let (view, command) = this.Program (CommandArgument message)
         window.Content <- View.instanciate this.OnEvent None view
+        let message = onCommand.Invoke command
+        (onCommand.Invoke command).MatchSome (fun message -> this.OnMessage message)
 
     member _.Program arg =
+        use modelPtrPtr = fixed modelPtr
+        use viewPtr = fixed viewBytes
+        let writtenViewSizes = Array.zeroCreate 1
+        use writtenViewSizePtr = fixed writtenViewSizes
+        use commandPtr = fixed commandBytes
+        let writtenCommandSizes = Array.zeroCreate 1
+        use writtenCommandSizePtr = fixed writtenCommandSizes
         match arg with
         | InitArgument flags ->
             let flagsBytes = encodeFlags.Invoke flags
             use flagsPtr = fixed flagsBytes
-            use modelPtrPtr = fixed modelPtr
-            use viewPtr = fixed viewBytes
-            let writtenViewSizes = Array.zeroCreate 1
-            use writtenViewSizePtr = fixed writtenViewSizes
-            let mutable outTag = OutTag.Noop
-            let give = Give (fun t -> outTag <- t)
             program.Invoke
               (flagsPtr,
                flagsBytes.Length,
@@ -116,19 +129,17 @@ type
                writtenViewSizePtr,
                nullptr,
                0,
-               give)
+               commandPtr,
+               commandSize,
+               writtenCommandSizePtr)
             let writtenViewSize = writtenViewSizes.[0]
             let view = decodeView.Invoke viewBytes.[0..writtenViewSize-1]
-            (view, outTag)
+            let writtenCommandSize = writtenCommandSizes.[0]
+            let command = decodeCommand.Invoke commandBytes.[0..writtenCommandSize-1]
+            (view, command)
         | CommandArgument message ->
-            use modelPtrPtr = fixed modelPtr
             let messageBytes = encodeMessage.Invoke message
             use messagePtr = fixed messageBytes
-            use viewPtr = fixed viewBytes
-            let writtenViewSizes = Array.zeroCreate 1
-            use writtenViewSizePtr = fixed writtenViewSizes
-            let mutable outTag = OutTag.Noop
-            let give = Give (fun t -> outTag <- t)
             program.Invoke
               (nullptr,
                -1,
@@ -138,7 +149,11 @@ type
                writtenViewSizePtr,
                messagePtr,
                messageBytes.Length,
-               give)
+               commandPtr,
+               commandSize,
+               writtenCommandSizePtr)
             let writtenViewSize = writtenViewSizes.[0]
             let view = decodeView.Invoke viewBytes.[0..writtenViewSize-1]
-            (view, outTag)
+            let writtenCommandSize = writtenCommandSizes.[0]
+            let command = decodeCommand.Invoke commandBytes.[0..writtenCommandSize-1]
+            (view, command)
