@@ -112,6 +112,6 @@ namespace Example
         public static extern void End();
 
         [DllImport("Logic.dll")]
-        public static extern unsafe void Program(Hui.InTag inTag, byte* flags, int flagsSize, void* model, byte* view, int viewSize, int* writtenViewSizePtr, byte* messagePtr, int messageSize, Hui.Give give);
+        public static extern unsafe void Program(byte* flags, int flagsSize, void* model, byte* view, int viewSize, int* writtenViewSizePtr, byte* messagePtr, int messageSize, Hui.Give give);
     }
 }

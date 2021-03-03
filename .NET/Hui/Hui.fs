@@ -10,16 +10,11 @@ open Microsoft.UI.Xaml
 type UIStackPanel = Microsoft.UI.Xaml.Controls.StackPanel
 type UIButton = Microsoft.UI.Xaml.Controls.Button
 
-type InTag =
-    | Init = 0
-    | Cmd = 1
-
 type OutTag =
     | Noop = 0
 
 type Give = delegate of OutTag -> unit
 
-/// <param name="inTag">a type of an input call (F# → Haskell)</param>
 /// <param name="flags">a pinter to a flags memory area</param>
 /// <param name="flagsSize">a size of a flags memory area</param>
 /// <param name="model">a pointer to a pointer to a model</param>
@@ -31,8 +26,7 @@ type Give = delegate of OutTag -> unit
 /// <param name="give">a pointer to a continuation</param>
 type Program =
   delegate of
-    inTag : InTag
-    * flags : byte nativeptr
+    flags : byte nativeptr
     * flagsSize : int
     * model : voidptr
     * view : byte nativeptr
@@ -114,8 +108,7 @@ type
             let mutable outTag = OutTag.Noop
             let give = Give (fun t -> outTag <- t)
             program.Invoke
-              (InTag.Init,
-               flagsPtr,
+              (flagsPtr,
                flagsBytes.Length,
                NativePtr.toVoidPtr modelPtrPtr,
                viewPtr,
@@ -137,9 +130,8 @@ type
             let mutable outTag = OutTag.Noop
             let give = Give (fun t -> outTag <- t)
             program.Invoke
-              (InTag.Cmd,
-               nullptr,
-               0,
+              (nullptr,
+               -1,
                NativePtr.toVoidPtr modelPtrPtr,
                viewPtr,
                viewSize,
