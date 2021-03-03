@@ -38,4 +38,4 @@ update :: Message -> Model -> (Model, Command Message)
 update ButtonClicked Model { count } = (Model { count = count + 1 }, mempty)
 
 subscriptions :: Model -> Subscription Message
-subscriptions = undefined
+subscriptions _ = mempty
