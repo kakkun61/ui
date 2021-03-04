@@ -37,8 +37,8 @@ type Program =
     -> unit
 
 type ('flags, 'message) Argument =
-  | InitArgument of flasg : 'flags
-  | CommandArgument of message : 'message
+    | InitArgument of flasg : 'flags
+    | CommandArgument of message : 'message
 
 type 'message View =
     | View of children : ('message View) IEnumerable
@@ -103,10 +103,12 @@ type
     member this.OnEvent message _ = this.OnMessage message
 
     member this.OnMessage message =
-        let (view, command) = this.Program (CommandArgument message)
-        window.Content <- View.instanciate this.OnEvent None view
-        let message = onCommand.Invoke command
-        (onCommand.Invoke command).MatchSome (fun message -> this.OnMessage message)
+        let mutable next = Optional.Option.Some<'message> message
+        while next.HasValue do
+            next.MatchSome (fun message ->
+                let (view, command) = this.Program (CommandArgument message)
+                window.Content <- View.instanciate this.OnEvent None view
+                next <- onCommand.Invoke command)
 
     member _.Program arg =
         use modelPtrPtr = fixed modelPtr
