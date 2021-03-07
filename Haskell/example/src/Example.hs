@@ -19,7 +19,7 @@ import qualified Data.Text       as Text
 import           Foreign.C.Types (CInt (CInt))
 
 main :: Program Flags Model Message Command
-main = program initialize view update subscriptions
+main = program initialize view update subscription
 
 #ifdef FOREIGN
 foreign export ccall main :: Program Flags Model Message Command
@@ -34,5 +34,5 @@ view Model { count } = View $ flip fmap [0 .. count] $ \c -> Button (Text.pack $
 update :: Message -> Model -> (Model, Command)
 update ButtonClicked Model { count } = (Model { count = count + 1 }, mempty)
 
-subscriptions :: Model -> Subscription Message
-subscriptions _ = mempty
+subscription :: Model -> Subscription Message
+subscription _ = mempty

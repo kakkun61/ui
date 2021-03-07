@@ -24,7 +24,7 @@ namespace Example
             Logic.Start();
         }
 
-        protected override void OnLaunched(LaunchActivatedEventArgs args) => app.Initialize(new PB.Flags());
+        protected override void OnLaunched(LaunchActivatedEventArgs args) => app.Run(new PB.Flags());
 
         static Optional.Option<Message> OnCommand(Command command) => Option.None<Message>();
     }

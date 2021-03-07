@@ -34,7 +34,7 @@ instance Monoid (Subscription message) where
   mempty = Subscription
 
 type Program flags model message command =
-  Ptr Word8 -- ^ a pinter to a flags memory area (input)
+  Ptr Word8 -- ^ a pointer to a flags memory area (input)
   -> CInt -- ^ a size of a flags memory area in byte
   -> Ptr (StablePtr model) -- ^ a pointer to a pointer to a model (input/output)
   -> Ptr Word8 -- ^ a pointer to a view memory area (output)
@@ -53,13 +53,13 @@ program
      , Decode message
      , Encode command
      )
-  => (flags -> (model, command))
-  -> (model -> View message)
-  -> (message -> model -> (model, command))
-  -> (model -> Subscription message)
+  => (flags -> (model, command)) -- ^ initialize
+  -> (model -> View message) -- ^ view
+  -> (message -> model -> (model, command)) -- ^ update
+  -> (model -> Subscription message) -- ^ subscription
   -> Program flags model message command
 -- update
-program ~initialize ~view ~update ~subscriptions _ (-1) modelPtrPtr viewPtr cViewSize writtenViewSizePtr messagePtr cMessageSize commandPtr cCommandSize writtenCommandSizePtr = do
+program ~initialize ~view ~update ~subscription _ (-1) modelPtrPtr viewPtr cViewSize writtenViewSizePtr messagePtr cMessageSize commandPtr cCommandSize writtenCommandSizePtr = do
   let
     viewSize = fromIntegral cViewSize :: Int
     messageSize = fromIntegral cMessageSize :: Int
@@ -69,8 +69,7 @@ program ~initialize ~view ~update ~subscriptions _ (-1) modelPtrPtr viewPtr cVie
   freeStablePtr modelPtr
   messageFPtr <- newForeignPtr_ messagePtr
   message <- decode $ BS.PS messageFPtr 0 messageSize
-  let
-    (newModel, command) = update message model
+  let (newModel, command) = update message model
   newModelPtr <- newStablePtr newModel
   poke modelPtrPtr newModelPtr
   let BS.PS viewFPtr _ writtenViewSize = encode $ view model
@@ -81,16 +80,15 @@ program ~initialize ~view ~update ~subscriptions _ (-1) modelPtrPtr viewPtr cVie
   when (commandSize < writtenCommandSize) $ fail "an encoded command is too large"
   withForeignPtr commandFPtr $ \srcPtr -> copyBytes commandPtr srcPtr writtenCommandSize
   poke writtenCommandSizePtr (fromIntegral writtenCommandSize)
--- init
-program ~initialize ~view ~update ~subscriptions flagsPtr cFlagsSize modelPtrPtr viewPtr cViewSize writtenViewSizePtr messagePtr cMessageSize commandPtr cCommandSize writtenCommandSizePtr = do
+-- initialize
+program ~initialize ~view ~update ~subscription flagsPtr cFlagsSize modelPtrPtr viewPtr cViewSize writtenViewSizePtr messagePtr cMessageSize commandPtr cCommandSize writtenCommandSizePtr = do
   let
     flagsSize = fromIntegral cFlagsSize :: Int
     viewSize = fromIntegral cViewSize :: Int
     commandSize = fromIntegral cCommandSize :: Int
   flagsFPtr <- newForeignPtr_ flagsPtr
   flags <- decode $ BS.PS flagsFPtr 0 flagsSize
-  let
-    (model, command) = initialize flags
+  let (model, command) = initialize flags
   modelPtr <- newStablePtr model
   poke modelPtrPtr modelPtr
   let BS.PS viewFPtr _ writtenViewSize = encode $ view model

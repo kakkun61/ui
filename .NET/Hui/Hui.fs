@@ -94,7 +94,7 @@ type
 
     let mutable window = Unchecked.defaultof<Window>
 
-    member this.Initialize (flags : 'flags) =
+    member this.Run (flags : 'flags) =
         let (view, command) = this.Program (InitArgument flags)
         window <- Window (Content = View.instanciate this.OnEvent None view)
         window.Activate ()
