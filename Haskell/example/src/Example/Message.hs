@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Example.Message
   ( convertOut
   ) where
@@ -27,5 +29,5 @@ convertIn (M.Message (Just (MM.ButtonClicked MB.ButtonClicked))) = ButtonClicked
 convertOut :: Message -> M.Message
 convertOut ButtonClicked = M.Message $ Just $ MM.ButtonClicked MB.ButtonClicked
 
-instance Encode Command where
+instance Encode [Command] where
   encode _ = BS.empty

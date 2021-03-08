@@ -33,7 +33,7 @@ instance Semigroup (Subscription message) where
 instance Monoid (Subscription message) where
   mempty = Subscription
 
-type Program flags model message command =
+type Program flags model message command subscription =
   Ptr Word8 -- ^ a pointer to a flags memory area (input)
   -> CInt -- ^ a size of a flags memory area in byte
   -> Ptr (StablePtr model) -- ^ a pointer to a pointer to a model (input/output)
@@ -51,15 +51,15 @@ program
   :: ( Decode flags
      , Encode (View message)
      , Decode message
-     , Encode command
+     , Encode [command]
      )
-  => (flags -> (model, command)) -- ^ initialize
+  => (flags -> (model, [command])) -- ^ initialize
   -> (model -> View message) -- ^ view
-  -> (message -> model -> (model, command)) -- ^ update
-  -> (model -> Subscription message) -- ^ subscription
-  -> Program flags model message command
+  -> (message -> model -> (model, [command])) -- ^ update
+  -> (model -> [subscription]) -- ^ subscription
+  -> Program flags model message command subscription
 -- update
-program ~initialize ~view ~update ~subscription _ (-1) modelPtrPtr viewPtr cViewSize writtenViewSizePtr messagePtr cMessageSize commandPtr cCommandSize writtenCommandSizePtr = do
+program ~initialize ~view ~update ~subscriptions _ (-1) modelPtrPtr viewPtr cViewSize writtenViewSizePtr messagePtr cMessageSize commandPtr cCommandSize writtenCommandSizePtr = do
   let
     viewSize = fromIntegral cViewSize :: Int
     messageSize = fromIntegral cMessageSize :: Int
@@ -81,7 +81,7 @@ program ~initialize ~view ~update ~subscription _ (-1) modelPtrPtr viewPtr cView
   withForeignPtr commandFPtr $ \srcPtr -> copyBytes commandPtr srcPtr writtenCommandSize
   poke writtenCommandSizePtr (fromIntegral writtenCommandSize)
 -- initialize
-program ~initialize ~view ~update ~subscription flagsPtr cFlagsSize modelPtrPtr viewPtr cViewSize writtenViewSizePtr messagePtr cMessageSize commandPtr cCommandSize writtenCommandSizePtr = do
+program ~initialize ~view ~update ~subscriptions flagsPtr cFlagsSize modelPtrPtr viewPtr cViewSize writtenViewSizePtr messagePtr cMessageSize commandPtr cCommandSize writtenCommandSizePtr = do
   let
     flagsSize = fromIntegral cFlagsSize :: Int
     viewSize = fromIntegral cViewSize :: Int
