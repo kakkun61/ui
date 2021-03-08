@@ -4,7 +4,6 @@ module Hui
  ( Program
  , program
  , View (..)
- , Subscription
  ) where
 
 import Hui.Code (Decode (decode), Encode (encode))
@@ -24,14 +23,6 @@ import           Foreign.Ptr                   (FunPtr, Ptr)
 data View message
   = View { children :: Seq (View message) }
   | Button { content :: Text, onClick :: Maybe message }
-
-data Subscription message = Subscription deriving (Show, Read, Eq, Ord)
-
-instance Semigroup (Subscription message) where
-  _ <> _ = Subscription
-
-instance Monoid (Subscription message) where
-  mempty = Subscription
 
 type Program flags model message command subscription =
   Ptr Word8 -- ^ a pointer to a flags memory area (input)

@@ -63,9 +63,6 @@ library
   import: lib
   exposed-modules: Example
                    Example.Data
-                   Example.Flags
-                   Example.Message
-                   Example.View
                    Example.Protobuf
                    Example.Protobuf.Component
                    Example.Protobuf.Component.Component
@@ -80,9 +77,6 @@ foreign-library Logic
   import: lib
   other-modules: Example
                  Example.Data
-                 Example.Flags
-                 Example.Message
-                 Example.View
                  Example.Protobuf
                  Example.Protobuf.Component
                  Example.Protobuf.Component.Component

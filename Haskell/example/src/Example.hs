@@ -7,18 +7,16 @@ module Example
   ( main
   ) where
 
-import Example.Data  (Command (NoOp), Message (ButtonClicked), Model (Model, count))
-import Example.Flags (Flags (Flags))
-import Example.View  ()
+import Example.Data (Command (NoOp), Flags (Flags), Message (ButtonClicked), Model (Model, count), Subscription)
 
-import           Hui (Program, Subscription, View (Button, View, children), program)
+import           Hui (Program, View (Button, View, children), program)
 import qualified Hui
 
 import qualified Data.Sequence   as Seq
 import qualified Data.Text       as Text
 import           Foreign.C.Types (CInt (CInt))
 
-main :: Program Flags Model Message Command ()
+main :: Program Flags Model Message Command Subscription
 main = program initialize view update subscriptions
 
 #ifdef FOREIGN
@@ -34,5 +32,5 @@ view Model { count } = View $ flip fmap [0 .. count] $ \c -> Button (Text.pack $
 update :: Message -> Model -> (Model, [Command])
 update ButtonClicked Model { count } = (Model { count = count + 1 }, mempty)
 
-subscriptions :: Model -> [()]
+subscriptions :: Model -> [Subscription]
 subscriptions _ = mempty
