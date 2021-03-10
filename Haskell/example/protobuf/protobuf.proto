@@ -8,8 +8,16 @@ message Flags {
 message Message {
   message ButtonClicked {}
 
+  message DotNetDescriptionButtonClicked {}
+
+  message DotNetDescription {
+    required string description = 1;
+  }
+
   oneof message {
     ButtonClicked buttonClicked = 1;
+    DotNetDescriptionButtonClicked dotNetDescriptionButtonClicked = 2;
+    DotNetDescription dotNetDescription = 3;
   }
 }
 
@@ -27,4 +35,19 @@ message Component {
     View view = 1;
     Button button = 2;
   }
+}
+
+message Commands {
+  message Command {
+    message NoOp {}
+
+    message GetDotNetDescription {}
+
+    oneof command {
+      NoOp noOp = 1;
+      GetDotNetDescription getDotNetDescription = 2;
+    }
+  }
+
+  repeated Command commands = 1;
 }

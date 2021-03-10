@@ -7,30 +7,42 @@ module Example
   ( main
   ) where
 
-import Example.Data (Command (NoOp), Flags (Flags), Message (ButtonClicked), Model (Model, count), Subscription)
+import Example.Data (Command (GetDotNetDescription), Flags,
+                     Message (ButtonClicked, DotNetDescription, DotNetDescriptionButtonClicked),
+                     Model (Model, count, dotNetDescription), Subscription)
 
-import           Hui (Program, View (Button, View, children), program)
-import qualified Hui
+import Hui (Program, View (Button, View), program)
 
-import qualified Data.Sequence   as Seq
-import qualified Data.Text       as Text
-import           Foreign.C.Types (CInt (CInt))
+import qualified Data.Text as Text
+
+#ifdef FOREIGN
+import Foreign.C.Types (CInt (CInt))
+#endif
 
 main :: Program Flags Model Message Command Subscription
 main = program initialize view update subscriptions
 
 #ifdef FOREIGN
-foreign export ccall main :: Program Flags Model Message Command ()
+foreign export ccall main :: Program Flags Model Message Command Subscription
 #endif
 
 initialize :: Flags -> (Model, [Command])
-initialize _ = (Model 0, mempty)
+initialize _ = (Model 0 "-", mempty)
 
 view :: Model -> View Message
-view Model { count } = View $ flip fmap [0 .. count] $ \c -> Button (Text.pack $ show c) (Just ButtonClicked)
+view Model { count, dotNetDescription } =
+  View
+    [ View
+        [ Button ".NET Version" (Just DotNetDescriptionButtonClicked)
+        , Button dotNetDescription Nothing
+        ]
+    , View $ flip fmap [0 .. count] $ \c -> Button (Text.pack $ show c) (Just ButtonClicked)
+    ]
 
 update :: Message -> Model -> (Model, [Command])
-update ButtonClicked Model { count } = (Model { count = count + 1 }, mempty)
+update ButtonClicked model@Model { count }   = (model { count = count + 1 }, mempty)
+update DotNetDescriptionButtonClicked model  = (model, [GetDotNetDescription])
+update (DotNetDescription description) model = (model { dotNetDescription = description }, mempty)
 
 subscriptions :: Model -> [Subscription]
 subscriptions _ = mempty

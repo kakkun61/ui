@@ -24,7 +24,9 @@ custom-setup
 common common
   build-depends: base >=4 && <5
   default-language: Haskell2010
-  ghc-options: -Wincomplete-uni-patterns
+  ghc-options: -Wall
+               -Wcompat
+               -Wincomplete-uni-patterns
                -Wincomplete-record-updates
                -Wmonomorphism-restriction
                -Wmissing-exported-signatures
@@ -53,9 +55,15 @@ common lib
                    Example.Protobuf.Component.Component
                    Example.Protobuf.Component.Button
                    Example.Protobuf.Component.View
+                   Example.Protobuf.Commands
+                   Example.Protobuf.Commands.Command
+                   Example.Protobuf.Commands.Command.Command
+                   Example.Protobuf.Commands.Command.NoOp
+                   Example.Protobuf.Commands.Command.GetDotNetDescription
                    Example.Protobuf.Flags
                    Example.Protobuf.Message
                    Example.Protobuf.Message.ButtonClicked
+                   Example.Protobuf.Message.DotNetDescriptionButtonClicked
                    Example.Protobuf.Message.Message
   build-tool-depends: hprotoc:hprotoc
 
@@ -68,9 +76,16 @@ library
                    Example.Protobuf.Component.Component
                    Example.Protobuf.Component.Button
                    Example.Protobuf.Component.View
+                   Example.Protobuf.Commands
+                   Example.Protobuf.Commands.Command
+                   Example.Protobuf.Commands.Command.Command
+                   Example.Protobuf.Commands.Command.NoOp
+                   Example.Protobuf.Commands.Command.GetDotNetDescription
                    Example.Protobuf.Flags
                    Example.Protobuf.Message
                    Example.Protobuf.Message.ButtonClicked
+                   Example.Protobuf.Message.DotNetDescription
+                   Example.Protobuf.Message.DotNetDescriptionButtonClicked
                    Example.Protobuf.Message.Message
 
 foreign-library Logic
@@ -82,9 +97,16 @@ foreign-library Logic
                  Example.Protobuf.Component.Component
                  Example.Protobuf.Component.Button
                  Example.Protobuf.Component.View
+                 Example.Protobuf.Commands
+                 Example.Protobuf.Commands.Command
+                 Example.Protobuf.Commands.Command.Command
+                 Example.Protobuf.Commands.Command.NoOp
+                 Example.Protobuf.Commands.Command.GetDotNetDescription
                  Example.Protobuf.Flags
                  Example.Protobuf.Message
                  Example.Protobuf.Message.ButtonClicked
+                 Example.Protobuf.Message.DotNetDescription
+                 Example.Protobuf.Message.DotNetDescriptionButtonClicked
                  Example.Protobuf.Message.Message
   type: native-shared
   cpp-options: -DFOREIGN

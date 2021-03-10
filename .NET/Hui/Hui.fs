@@ -18,9 +18,9 @@ type UIButton = Microsoft.UI.Xaml.Controls.Button
 /// <param name="writtenViewSizePtr">a pointer to a size of a written view memory area</param>
 /// <param name="messagePtr">a pointer to a message memory area</param>
 /// <param name="messageSize">a size of a message memory area</param>
-/// <param name="command">a pointer to a command memory area</param>
-/// <param name="commandSize">a size of a command memory area</param>
-/// <param name="writtenCommandSizePtr">a pointer to a size of a written command memory area</param>
+/// <param name="commands">a pointer to a commands memory area</param>
+/// <param name="commandsSize">a size of a commands memory area</param>
+/// <param name="writtenCommandsSizePtr">a pointer to a size of a written commands memory area</param>
 type Program =
   delegate of
     flags : byte nativeptr
@@ -31,9 +31,9 @@ type Program =
     * writtenViewSizePtr : int nativeptr
     * messagePtr : byte nativeptr
     * messageSize : int
-    * command : byte nativeptr
-    * commandSize : int
-    * writtenCommandSizePtr : int nativeptr
+    * commands : byte nativeptr
+    * commandsSize : int
+    * writtenCommandsSizePtr : int nativeptr
     -> unit
 
 type ('flags, 'message) Argument =
@@ -76,7 +76,7 @@ type
      encodeFlags : 'flags Encode,
      encodeMessage : 'message Encode,
      decodeView : ('message View) Decode,
-     decodeCommand : 'command Decode,
+     decodeCommands : ('command IEnumerable) Decode,
      onCommand : ('command, 'message) OnCommand) =
 
     let viewSize = 512
@@ -85,7 +85,7 @@ type
 
     let commandSize = 512
 
-    let commandBytes = Array.zeroCreate commandSize
+    let commandsBytes = Array.zeroCreate commandSize
 
     /// <remarks>This is an array to use <c>fixed</c> operator.</remarks>
     let modelPtr : nativeint array = Array.zeroCreate 1
@@ -95,27 +95,27 @@ type
     let mutable window = Unchecked.defaultof<Window>
 
     member this.Run (flags : 'flags) =
-        let (view, command) = this.Program (InitArgument flags)
+        let (view, commands) = this.Program (InitArgument flags)
         window <- Window (Content = View.instanciate this.OnEvent None view)
         window.Activate ()
-        (onCommand.Invoke command).MatchSome (fun message -> this.OnMessage message)
+        for command in commands do (onCommand.Invoke command).MatchSome (fun message -> this.OnMessage message)
 
     member this.OnEvent message _ = this.OnMessage message
 
     member this.OnMessage message =
-        let mutable next = Optional.Option.Some<'message> message
-        while next.HasValue do
-            next.MatchSome (fun message ->
-                let (view, command) = this.Program (CommandArgument message)
-                window.Content <- View.instanciate this.OnEvent None view
-                next <- onCommand.Invoke command)
+        let next = Queue [message]
+        while next.Count <> 0 do
+            let message = next.Dequeue ()
+            let (view, commands) = this.Program (CommandArgument message)
+            window.Content <- View.instanciate this.OnEvent None view
+            for command in commands do (onCommand.Invoke command).MatchSome (fun message -> next.Enqueue message)
 
     member _.Program arg =
         use modelPtrPtr = fixed modelPtr
         use viewPtr = fixed viewBytes
         let writtenViewSizes = Array.zeroCreate 1
         use writtenViewSizePtr = fixed writtenViewSizes
-        use commandPtr = fixed commandBytes
+        use commandPtr = fixed commandsBytes
         let writtenCommandSizes = Array.zeroCreate 1
         use writtenCommandSizePtr = fixed writtenCommandSizes
         match arg with
@@ -137,8 +137,8 @@ type
             let writtenViewSize = writtenViewSizes.[0]
             let view = decodeView.Invoke viewBytes.[0..writtenViewSize-1]
             let writtenCommandSize = writtenCommandSizes.[0]
-            let command = decodeCommand.Invoke commandBytes.[0..writtenCommandSize-1]
-            (view, command)
+            let commands = decodeCommands.Invoke commandsBytes.[0..writtenCommandSize-1]
+            (view, commands)
         | CommandArgument message ->
             let messageBytes = encodeMessage.Invoke message
             use messagePtr = fixed messageBytes
@@ -157,5 +157,5 @@ type
             let writtenViewSize = writtenViewSizes.[0]
             let view = decodeView.Invoke viewBytes.[0..writtenViewSize-1]
             let writtenCommandSize = writtenCommandSizes.[0]
-            let command = decodeCommand.Invoke commandBytes.[0..writtenCommandSize-1]
-            (view, command)
+            let commands = decodeCommands.Invoke commandsBytes.[0..writtenCommandSize-1]
+            (view, commands)

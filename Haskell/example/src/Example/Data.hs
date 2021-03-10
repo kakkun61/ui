@@ -1,8 +1,9 @@
 {-# LANGUAGE CPP                    #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE NamedFieldPuns         #-}
+
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Example.Data
   ( Flags (..)
@@ -12,24 +13,29 @@ module Example.Data
   , Subscription
   ) where
 
-import qualified Example.Protobuf.Component             as C
-import qualified Example.Protobuf.Component.Button      as CB
-import qualified Example.Protobuf.Component.Component   as CC
-import qualified Example.Protobuf.Component.View        as CV
-import           Example.Protobuf.Flags                 (Flags (Flags))
-import qualified Example.Protobuf.Message               as M
-import qualified Example.Protobuf.Message.ButtonClicked as MB
-import qualified Example.Protobuf.Message.Message       as MM
+import qualified Example.Protobuf.Commands                               as C
+import qualified Example.Protobuf.Commands.Command                       as CC
+import qualified Example.Protobuf.Commands.Command.Command               as CCC
+import qualified Example.Protobuf.Commands.Command.GetDotNetDescription  as CCG
+import qualified Example.Protobuf.Commands.Command.NoOp                  as CCN
+import qualified Example.Protobuf.Component                              as C
+import qualified Example.Protobuf.Component.Button                       as CB
+import qualified Example.Protobuf.Component.Component                    as CC
+import qualified Example.Protobuf.Component.View                         as CV
+import           Example.Protobuf.Flags                                  (Flags (Flags))
+import qualified Example.Protobuf.Message                                as M
+import qualified Example.Protobuf.Message.ButtonClicked                  as MB
+import qualified Example.Protobuf.Message.DotNetDescription              as MD
+import qualified Example.Protobuf.Message.DotNetDescriptionButtonClicked as MD
+import qualified Example.Protobuf.Message.Message                        as MM
 
-import           Hui      (View (Button, View, children, content, onClick))
-import qualified Hui
-import           Hui.Code (Decode (decode), Encode (encode))
+import Hui      (View (Button, View, children, content, onClick))
+import Hui.Code (Decode (decode), Encode (encode))
 
-import qualified Data.ByteString      as BS
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Sequence        as Seq
+import           Data.Text            (Text)
 import qualified Data.Text.Encoding   as Text
-import           Foreign.C.Types      (CInt (CInt))
 import qualified Text.ProtocolBuffers as PB
 
 class ConvertIn m p | m -> p, p -> m where
@@ -40,9 +46,18 @@ class ConvertOut m p | m -> p, p -> m where
 
 instance Decode Flags
 
-newtype Model = Model { count :: Word } deriving (Show, Read, Eq, Ord)
+data Model =
+  Model
+    { count             :: Word
+    , dotNetDescription :: Text
+    }
+  deriving (Show, Read, Eq, Ord)
 
-data Message = ButtonClicked deriving (Show, Read, Eq, Ord)
+data Message
+  = ButtonClicked
+  | DotNetDescriptionButtonClicked
+  | DotNetDescription Text
+  deriving (Show, Read, Eq, Ord)
 
 instance Encode Message where
   encode = encode . convertOut
@@ -56,9 +71,14 @@ instance Decode M.Message
 
 instance ConvertIn Message M.Message where
   convertIn (M.Message (Just (MM.ButtonClicked MB.ButtonClicked))) = ButtonClicked
+  convertIn (M.Message (Just (MM.DotNetDescriptionButtonClicked MD.DotNetDescriptionButtonClicked))) = DotNetDescriptionButtonClicked
+  convertIn (M.Message (Just (MM.DotNetDescription (MD.DotNetDescription (PB.Utf8 descriptionBsl))))) = DotNetDescription $ Text.decodeUtf8 $ BSL.toStrict descriptionBsl
+  convertIn (M.Message Nothing) = error "an unexpected message"
 
 instance ConvertOut Message M.Message where
   convertOut ButtonClicked = M.Message $ Just $ MM.ButtonClicked MB.ButtonClicked
+  convertOut DotNetDescriptionButtonClicked = M.Message $ Just $ MM.DotNetDescriptionButtonClicked MD.DotNetDescriptionButtonClicked
+  convertOut (DotNetDescription description) = M.Message $ Just $ MM.DotNetDescription $ MD.DotNetDescription $ PB.Utf8 $ BSL.fromStrict $ Text.encodeUtf8 description
 
 instance Encode (View Message) where
   encode = encode . convertOut
@@ -76,9 +96,18 @@ instance ConvertOut (View Message) C.Component where
             , CB.onClick = convertOut <$> onClick
             }
 
-instance Encode [Command] where
-  encode _ = BS.empty
+data Command = NoOp | GetDotNetDescription deriving (Show, Read, Eq, Ord)
 
-data Command = NoOp deriving (Show, Read, Eq, Ord)
+instance Encode [Command] where
+  encode = encode . convertOut
+
+instance Encode C.Commands
+
+instance ConvertOut [Command] C.Commands where
+  convertOut cs = C.Commands $ Seq.fromList $ convertOut <$> cs
+
+instance ConvertOut Command CC.Command where
+  convertOut NoOp                 = CC.Command $ Just $ CCC.NoOp CCN.NoOp
+  convertOut GetDotNetDescription = CC.Command $ Just $ CCC.GetDotNetDescription CCG.GetDotNetDescription
 
 type Subscription = ()
